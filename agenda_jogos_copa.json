@@ -1,0 +1,138 @@
+{
+  "name": "agenda_jogos_copa",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "/* Busca os dados da API */\nconst matches = $input.first().json.Results;\nconst addFlag = (name) => name === 'Brasil' ? `💛💚 ${name}` : name;\n// Ajusta para horário de Brasília (UTC-3)\nconst toBRT = (date) => {\n  const offset = -3 * 60;\n  const brt = new Date(date.getTime() + offset * 60 * 1000);\n  return brt.toISOString().replace('Z', '-03:00');\n};\n\nreturn matches\n  /*Filtra só a fase de grupos*/\n  .filter(match => match.StageName?.[0]?.Description === 'Primeira fase')\n  /*Transforma cada jogo no formato padrão*/\n  .map(match => {\n    /*Pega o nome dos times*/\n    const homeTeam = addFlag(match.Home?.TeamName?.[0]?.Description ?? match.PlaceHolderA ?? 'A definir');\n    const awayTeam = addFlag(match.Away?.TeamName?.[0]?.Description ?? match.PlaceHolderB ?? 'A definir');\n    const grupo = match.GroupName?.[0]?.Description ?? 'A definir';\n    const inicio_jogo = new Date(match.Date);\n    const fim_jogo = new Date(inicio_jogo.getTime() + 2 * 60 * 60 * 1000);\n\n    return {\n      json: {\n        titulo: `${homeTeam} x ${awayTeam} | ${grupo}`,\n        inicio: toBRT(inicio_jogo),\n        fim: toBRT(fim_jogo),\n        local: `${match.Stadium?.Name?.[0]?.Description ?? 'A definir'}, ${match.Stadium?.CityName?.[0]?.Description ?? ''}`.trim().replace(/,$/, ''),\n        rodada: `Copa do Mundo 2026 - ${match.StageName?.[0]?.Description ?? ''}`.trim().replace(/ - $/, '')\n      }\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        480
+      ],
+      "id": "71e5967c-622c-4e06-8215-91cfbf377b4f",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "url": "https://api.fifa.com/api/v3/calendar/matches?language=pt&count=500&idSeason=285023",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        480
+      ],
+      "id": "7862663d-a602-437b-bef1-0d4a12df7e89",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        416,
+        480
+      ],
+      "id": "89a61f8b-0c4c-42cf-9456-9e1a4a49d32b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "content": "Copa do Mundo",
+        "height": 448,
+        "width": 1332
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        352,
+        416
+      ],
+      "id": "19a4fdd4-4428-47f5-9b52-f6bc95c83306",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "5d180616c121bc04f1e0e94a8da772950eccb41522e2d7dbd4f22a22a54869b0@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Copa do Mundo 2026"
+        },
+        "start": "={{ $json.inicio }}",
+        "end": "={{ $json.fim }}",
+        "additionalFields": {
+          "description": "={{ $json.rodada }}",
+          "location": "={{ $json.local }}",
+          "summary": "={{ $json.titulo }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        480
+      ],
+      "id": "b6c76d3a-632a-4240-8a25-92d0f626c17b",
+      "name": "Create an event1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Create an event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2190e7b4-bf94-4db8-91b3-063c6cd64ca1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0114698ba62a0ff13e10e44049e656ec87ed6fb976b2cc85718e5e7a305ab40"
+  },
+  "id": "wofCKpUbyOyviJRG",
+  "tags": []
+}
